@@ -238,24 +238,25 @@ type codeGenOpBuilder struct {
 	Authed           bool
 	IncludeValidator bool
 
-	Name            string
-	Method          string
-	Path            string
-	BasePath        string
-	APIPackage      string
-	RootAPIPackage  string
-	ModelsPackage   string
-	Principal       string
-	Target          string
-	Operation       spec.Operation
-	Doc             *loads.Document
-	Analyzed        *analysis.Spec
-	DefaultImports  []string
-	DefaultScheme   string
-	DefaultProduces string
-	DefaultConsumes string
-	ExtraSchemas    map[string]GenSchema
-	GenOpts         *GenOpts
+	Name                 string
+	Method               string
+	Path                 string
+	BasePath             string
+	APIPackage           string
+	RootAPIPackage       string
+	ModelsPackage        string
+	Principal            string
+	Target               string
+	Operation            spec.Operation
+	Doc                  *loads.Document
+	Analyzed             *analysis.Spec
+	DefaultImports       []string
+	DefaultScheme        string
+	DefaultProduces      string
+	DefaultConsumes      string
+	ExtraSchemas         map[string]GenSchema
+	GenOpts              *GenOpts
+	SecurityRequirements []analysis.SecurityRequirement
 }
 
 func renameTimeout(seenIds map[string][]string, current string) string {
@@ -397,8 +398,10 @@ func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
 
 	swsp := resolver.Doc.Spec()
 	var extraSchemes []string
+	var extraSchemeOverrides []string
 	if ess, ok := operation.Extensions.GetStringSlice("x-schemes"); ok {
 		extraSchemes = append(extraSchemes, ess...)
+		extraSchemeOverrides = append(extraSchemeOverrides, ess...)
 	}
 
 	if ess1, ok := swsp.Extensions.GetStringSlice("x-schemes"); ok {
@@ -468,11 +471,15 @@ func (b *codeGenOpBuilder) MakeOperation() (GenOperation, error) {
 		SuccessResponses:     successResponses,
 		ExtraSchemas:         extra,
 		Schemes:              schemeOrDefault(schemes, b.DefaultScheme),
-		ProducesMediaTypes:   produces,
-		ConsumesMediaTypes:   consumes,
+		SchemeOverrides:      operation.Schemes,
+		ExtraSchemeOverrides: extraSchemeOverrides,
+		SecurityRequirements: b.SecurityRequirements,
+		Produces:             produces,
+		Consumes:             consumes,
 		ExtraSchemes:         extraSchemes,
 		WithContext:          b.WithContext,
 		TimeoutName:          timeoutName,
+		ExternalDocs:         operation.ExternalDocs,
 	}, nil
 }
 
